@@ -1,0 +1,38 @@
+:root {
+  --bg: #f6f7f9;
+  --card: #fff;
+  --text: #1d2330;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --danger: #c0392b;
+  --border: #dde1e7;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body { margin: 0; background: var(--bg); color: var(--text); }
+main { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+h1 { margin-top: 0; }
+section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+h2 { margin-top: 0; }
+h3 { font-size: 1rem; margin: 20px 0 8px; }
+
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+input, select, button { font: inherit; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; }
+input:not([type="date"]) { flex: 1; min-width: 160px; }
+label { display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; color: var(--muted); }
+button { background: var(--accent); color: #fff; border-color: var(--accent); cursor: pointer; }
+button:disabled { opacity: 0.6; cursor: default; }
+button.stop { background: var(--danger); border-color: var(--danger); }
+
+.error { color: var(--danger); min-height: 1.2em; margin: 6px 0; }
+.muted { color: var(--muted); }
+
+.employees { list-style: none; padding: 0; margin: 0; }
+.employees li { border-top: 1px solid var(--border); padding: 10px 0; }
+.employees .name { font-weight: 600; margin-bottom: 6px; }
+.employees .running { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.elapsed { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
