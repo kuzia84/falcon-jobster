@@ -29,6 +29,12 @@ export function createApp({ db, now = Date.now }) {
   app.use(express.json());
   app.use(express.static(PUBLIC_DIR));
 
+  // The page uses this header to correct the browser clock in live counters.
+  app.use('/api', (req, res, next) => {
+    res.set('X-Server-Time', String(now()));
+    next();
+  });
+
   app.get('/api/employees', (req, res) => {
     res.json(repo.listEmployees());
   });

@@ -12,7 +12,11 @@ const server = createApp({ db }).listen(port, () => {
   console.log(`Учёт времени: http://localhost:${port} (база: ${dbPath})`);
 });
 
+// A second Ctrl+C must not close the database again.
+let stopping = false;
 function shutdown() {
+  if (stopping) return;
+  stopping = true;
   server.close(() => {
     db.close();
     process.exit(0);

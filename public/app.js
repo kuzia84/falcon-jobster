@@ -1,11 +1,21 @@
 const $ = (id) => document.getElementById(id);
 
+const POLL_MS = 30 * 1000;
+const ERROR_VISIBLE_MS = 8 * 1000;
+
+// Difference between the server clock and the browser clock. Live counters use
+// server time, so a wrong browser clock does not change the durations.
+let clockOffset = 0;
+const serverNow = () => Date.now() + clockOffset;
+
 async function api(method, path, body) {
   const res = await fetch(path, {
     method,
     headers: body ? { 'Content-Type': 'application/json' } : {},
     body: body ? JSON.stringify(body) : undefined,
   });
+  const serverTime = Number(res.headers.get('X-Server-Time'));
+  if (serverTime) clockOffset = serverTime - Date.now();
   const data = await res.json().catch(() => null);
   if (!res.ok) throw new Error(data?.error || `Ошибка ${res.status}`);
   return data;
@@ -44,11 +54,19 @@ function localMidnight(value) {
 /* ---------- Employees ---------- */
 
 let employees = [];
-// Last timer error per employee id. It survives a re-render of the list.
+let employeesJson = '';
+// A timer error waits here until the next render of the list shows it once.
 const timerErrors = new Map();
+// Unsent task descriptions. They survive a re-render of the list.
+const drafts = new Map();
 
-async function loadEmployees() {
-  employees = await api('GET', '/api/employees');
+// Polling calls this without `force`: it re-renders only when the data changed.
+async function loadEmployees({ force = false } = {}) {
+  const fresh = await api('GET', '/api/employees');
+  const json = JSON.stringify(fresh);
+  if (!force && json === employeesJson) return;
+  employees = fresh;
+  employeesJson = json;
   renderEmployees();
   renderEmployeeFilter();
 }
@@ -61,7 +79,13 @@ function renderEmployees() {
 }
 
 function renderEmployee(emp) {
-  const error = el('p', { className: 'error', role: 'alert', textContent: timerErrors.get(emp.id) ?? '' });
+  const error = el('p', { className: 'error', role: 'alert' });
+  const message = timerErrors.get(emp.id);
+  if (message) {
+    timerErrors.delete(emp.id);
+    error.textContent = message;
+    setTimeout(() => { error.textContent = ''; }, ERROR_VISIBLE_MS);
+  }
   const item = el('li', {}, el('div', { className: 'name', textContent: emp.name }));
 
   if (emp.activeEntry) {
@@ -75,7 +99,13 @@ function renderEmployee(emp) {
       error,
     );
   } else {
-    const input = el('input', { placeholder: 'Описание задачи', maxLength: 200, required: true });
+    const input = el('input', {
+      placeholder: 'Описание задачи',
+      maxLength: 200,
+      required: true,
+      value: drafts.get(emp.id) ?? '',
+    });
+    input.addEventListener('input', () => drafts.set(emp.id, input.value));
     const start = el('button', { type: 'submit', textContent: 'Старт' });
     const form = el('form', { className: 'row' }, input, start);
     form.addEventListener('submit', (event) => {
@@ -89,32 +119,43 @@ function renderEmployee(emp) {
 
 async function timerAction(button, employeeId, action, body) {
   button.disabled = true;
-  timerErrors.delete(employeeId);
   try {
     await api('POST', `/api/employees/${employeeId}/timer/${action}`, body);
+    if (action === 'start') drafts.delete(employeeId);
   } catch (err) {
     // The page may be out of date, for example after a start in another tab.
     // Keep the message and reload the real state below.
     timerErrors.set(employeeId, err.message);
   }
   try {
-    await Promise.all([loadEmployees(), loadReport()]);
+    await Promise.all([loadEmployees({ force: true }), loadReport()]);
   } catch (err) {
     button.disabled = false;
     $('employee-error').textContent = err.message;
   }
 }
 
-// Updates every running duration: in the employee list and in the report.
+// Updates every live value once a second: running timers in the employee list
+// and in the report, and report totals of employees with a running timer.
 function tickTimers() {
+  const now = serverNow();
   for (const node of document.querySelectorAll('[data-started-at]')) {
-    node.textContent = formatDuration(Date.now() - Number(node.dataset.startedAt));
+    node.textContent = formatDuration(now - Number(node.dataset.startedAt));
+  }
+  for (const node of document.querySelectorAll('[data-live-base]')) {
+    const { liveBase, liveSince, liveUntil } = node.dataset;
+    const extra = Math.max(0, Math.min(now, Number(liveUntil)) - Number(liveSince));
+    node.textContent = formatDuration(Number(liveBase) + extra);
   }
 }
 
 $('employee-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   const input = $('employee-name');
+  const button = event.submitter ?? $('employee-form').querySelector('button');
+  // A second Enter or double click must not send the same name again.
+  if (button.disabled) return;
+  button.disabled = true;
   $('employee-error').textContent = '';
   try {
     await api('POST', '/api/employees', { name: input.value });
@@ -122,6 +163,8 @@ $('employee-form').addEventListener('submit', async (event) => {
     await Promise.all([loadEmployees(), loadReport()]);
   } catch (err) {
     $('employee-error').textContent = err.message;
+  } finally {
+    button.disabled = false;
   }
 });
 
@@ -168,17 +211,28 @@ async function loadReport() {
   const request = ++reportRequest;
   try {
     const report = await api('GET', `/api/report?${query}`);
-    if (request === reportRequest) renderReport(report);
+    if (request === reportRequest) renderReport(report, to.getTime());
   } catch (err) {
     if (request === reportRequest) $('report-error').textContent = err.message;
   }
 }
 
-function renderReport({ entries, totals }) {
+function renderReport({ entries, totals }, periodEnd) {
+  const now = serverNow();
+  const running = new Set(entries.filter((e) => !e.endedAt).map((e) => e.employeeId));
+
   $('totals').replaceChildren(...totals.map((t) =>
     el('tr', {},
       el('td', { textContent: t.name }),
-      el('td', { className: 'num', textContent: formatDuration(t.totalMs) }))));
+      el('td', {
+        className: 'num',
+        textContent: formatDuration(t.totalMs),
+        // The server counted a running timer up to `now`. The page adds the
+        // time after that, but not past the end of the period.
+        dataset: running.has(t.employeeId)
+          ? { liveBase: t.totalMs, liveSince: now, liveUntil: periodEnd }
+          : {},
+      }))));
 
   $('entries').replaceChildren(...entries.map((e) =>
     el('tr', {},
@@ -188,7 +242,7 @@ function renderReport({ entries, totals }) {
       el('td', { textContent: e.endedAt ? dateTime.format(e.endedAt) : 'идёт' }),
       el('td', {
         className: 'num',
-        textContent: formatDuration((e.endedAt ?? Date.now()) - e.startedAt),
+        textContent: formatDuration((e.endedAt ?? now) - e.startedAt),
         // A running entry gets the live counter, the same as in the employee list.
         dataset: e.endedAt ? {} : { startedAt: e.startedAt },
       }))));
@@ -207,10 +261,11 @@ $('report-employee').addEventListener('change', loadReport);
 
 setCurrentWeek();
 setInterval(tickTimers, 1000);
-// Totals of a running timer change over time. Refresh the report once a minute.
+// Changes from other tabs and other people appear without a reload.
 setInterval(() => {
-  if (employees.some((e) => e.activeEntry)) loadReport();
-}, 60 * 1000);
+  loadEmployees().catch(() => {});
+  loadReport();
+}, POLL_MS);
 
 try {
   await Promise.all([loadEmployees(), loadReport()]);

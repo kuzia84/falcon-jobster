@@ -271,10 +271,27 @@ describe('API', () => {
 
     test('неверный employeeId в отчёте', async () => {
       assert.equal((await ctx.call('GET', reportPath(FROM, TO, 'abc'))).status, 400);
-      const unknown = await ctx.call('GET', reportPath(FROM, TO, 999));
-      assert.equal(unknown.status, 200);
-      assert.deepEqual(unknown.data, { entries: [], totals: [] });
+      // Same answer as the timer endpoints: a typo must not look like "no hours".
+      assert.equal((await ctx.call('GET', reportPath(FROM, TO, 999))).status, 404);
     });
+
+    test('часы ушли назад при идущем таймере: итог не уменьшается', async () => {
+      const emp = await addEmployee('Анна Тестова');
+      const base = `/api/employees/${emp.id}/timer`;
+      await ctx.call('POST', `${base}/start`, { description: 'Закрытая' });
+      ctx.clock.now += HOUR;
+      await ctx.call('POST', `${base}/stop`);
+      await ctx.call('POST', `${base}/start`, { description: 'Идёт' });
+      ctx.clock.now -= 10 * 60 * 1000;
+
+      const res = await ctx.call('GET', reportPath(FROM, TO));
+      assert.equal(res.data.totals[0].totalMs, HOUR);
+    });
+  });
+
+  test('ответ API содержит время сервера', async () => {
+    const res = await fetch(`http://127.0.0.1:${ctx.server.address().port}/api/employees`);
+    assert.equal(res.headers.get('x-server-time'), String(T0));
   });
 
   describe('ограничения ввода', () => {

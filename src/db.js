@@ -27,6 +27,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS one_active_timer
   ON entries(employee_id) WHERE ended_at IS NULL;
 
 CREATE INDEX IF NOT EXISTS entries_started_at ON entries(started_at);
+-- The report totals join entries by employee and period start.
+CREATE INDEX IF NOT EXISTS entries_employee_started ON entries(employee_id, started_at);
 `;
 
 // Opens (or creates) the database and applies the schema.
