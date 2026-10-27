@@ -81,3 +81,7 @@ npm run test:ui                   # 12 тестов интерфейса в бр
 - [docs/architecture.md](docs/architecture.md) — файлы, API, переменные окружения, решения
 - [docs/testing.md](docs/testing.md) — что проверяют тесты
 - [docs/bugs-and-reviews.md](docs/bugs-and-reviews.md) — все найденные ошибки, ревью и проверка UI/UX
+
+## Автор
+
+Резюме и портфолио: [docs/portfolio.html](docs/portfolio.html). Откройте файл в браузере: GitHub показывает только код HTML-страницы.

@@ -1,0 +1,996 @@
+<title>Фронтенд трейдинговых кабинетов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --paper: #F2F3F0;
+    --surface: #FAFAF8;
+    --surface-sunk: #E8EAE6;
+    --ink: #15191B;
+    --ink-2: #4A5356;
+    --ink-3: #78827F;
+    --rule: #D6DAD5;
+    --rule-strong: #B9BFB9;
+    --accent: #0E5C63;
+    --accent-wash: #DDE7E6;
+    --signal: #A85410;
+    --signal-wash: #F0E4D6;
+
+    --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+    --measure: 66ch;
+    --gutter: clamp(20px, 5vw, 64px);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0E1416;
+      --surface: #151C1E;
+      --surface-sunk: #0A1011;
+      --ink: #E8ECEA;
+      --ink-2: #9AA6A6;
+      --ink-3: #6E7A7A;
+      --rule: #26312F;
+      --rule-strong: #3A4745;
+      --accent: #4FB3BC;
+      --accent-wash: #16292C;
+      --signal: #E0A057;
+      --signal-wash: #2A2118;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #0E1416;
+    --surface: #151C1E;
+    --surface-sunk: #0A1011;
+    --ink: #E8ECEA;
+    --ink-2: #9AA6A6;
+    --ink-3: #6E7A7A;
+    --rule: #26312F;
+    --rule-strong: #3A4745;
+    --accent: #4FB3BC;
+    --accent-wash: #16292C;
+    --signal: #E0A057;
+    --signal-wash: #2A2118;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 var(--gutter);
+  }
+
+  a {
+    color: var(--accent);
+  }
+
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  .eyebrow {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--f-display);
+    text-wrap: balance;
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    border-bottom: 1px solid var(--rule);
+    padding: clamp(28px, 6vw, 56px) 0 0;
+  }
+
+  .topbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-bottom: clamp(36px, 7vw, 64px);
+  }
+
+  .topbar .eyebrow {
+    line-height: 1.4;
+  }
+
+  .theme-toggle {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    background: none;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+
+  .theme-toggle:hover {
+    color: var(--ink);
+    border-color: var(--rule-strong);
+  }
+
+  h1 {
+    font-size: clamp(34px, 6.2vw, 62px);
+    font-weight: 700;
+    line-height: 1.02;
+    max-width: 16ch;
+  }
+
+  .lede {
+    max-width: var(--measure);
+    margin-top: 22px;
+    font-size: clamp(17px, 2.1vw, 20px);
+    line-height: 1.55;
+    color: var(--ink-2);
+  }
+
+  .lede strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .identity {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+    align-items: baseline;
+    margin: 30px 0 clamp(32px, 6vw, 52px);
+    font-family: var(--f-mono);
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+
+  .identity .name {
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+  }
+
+  /* ---------- fact strip ---------- */
+
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    border-top: 1px solid var(--rule);
+    border-left: 1px solid var(--rule);
+  }
+
+  .fact {
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    padding: 16px 18px 18px;
+    background: var(--surface);
+  }
+
+  .fact b {
+    display: block;
+    font-family: var(--f-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(24px, 3.4vw, 32px);
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--ink);
+  }
+
+  .fact span {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.35;
+    color: var(--ink-2);
+  }
+
+  /* ---------- sections ---------- */
+
+  section {
+    padding: clamp(48px, 8vw, 84px) 0;
+  }
+
+  section+section {
+    border-top: 1px solid var(--rule);
+  }
+
+  .sec-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    align-items: baseline;
+    margin-bottom: clamp(28px, 4vw, 40px);
+  }
+
+  .sec-head h2 {
+    font-size: clamp(22px, 3vw, 29px);
+    font-weight: 600;
+  }
+
+  .sec-head p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--ink-3);
+    max-width: 44ch;
+  }
+
+  /* ---------- ledger of cases ---------- */
+
+  .ledger {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--rule-strong);
+  }
+
+  .case {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr) 210px;
+    gap: 28px;
+    padding: 26px 0 28px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .case-year {
+    font-family: var(--f-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--signal);
+    letter-spacing: 0.02em;
+    padding-top: 4px;
+  }
+
+  .case-year i {
+    display: block;
+    font-style: normal;
+    margin-top: 4px;
+    color: var(--ink-3);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .case h3 {
+    font-size: clamp(19px, 2.3vw, 23px);
+    font-weight: 600;
+    line-height: 1.22;
+  }
+
+  .case-role {
+    margin: 8px 0 0;
+    font-size: 15px;
+    color: var(--ink-2);
+    max-width: 56ch;
+  }
+
+  .modules {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .modules li {
+    font-family: var(--f-mono);
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    background: var(--surface-sunk);
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+
+  .stack {
+    margin: 14px 0 0;
+    font-family: var(--f-mono);
+    font-size: 12px;
+    color: var(--ink-3);
+    word-spacing: 0.1em;
+  }
+
+  .volume {
+    padding-top: 4px;
+  }
+
+  .volume-num {
+    font-family: var(--f-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .volume-num small {
+    font-weight: 400;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-left: 6px;
+  }
+
+  .bar {
+    margin-top: 8px;
+    height: 6px;
+    background: var(--surface-sunk);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+
+  .bar i {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+  }
+
+  .volume-note {
+    margin: 10px 0 0;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--ink-3);
+  }
+
+  @media (max-width: 760px) {
+    .case {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .case-year {
+      padding-top: 0;
+      display: flex;
+      gap: 12px;
+      align-items: baseline;
+    }
+
+    .case-year i {
+      margin-top: 0;
+    }
+
+    .volume {
+      padding-top: 0;
+    }
+  }
+
+  /* ---------- earlier work ---------- */
+
+  .earlier {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 2px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+
+  .earlier div {
+    background: var(--surface);
+    padding: 18px 20px 20px;
+  }
+
+  .earlier h4 {
+    margin: 0;
+    font-family: var(--f-display);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .earlier p {
+    margin: 7px 0 0;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+
+  .earlier .n {
+    font-family: var(--f-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    display: block;
+    margin-bottom: 9px;
+  }
+
+  /* ---------- stack ---------- */
+
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: clamp(24px, 4vw, 44px);
+  }
+
+  .stack-grid h4 {
+    margin: 0 0 12px;
+    font-family: var(--f-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .stack-grid ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    font-size: 14.5px;
+    color: var(--ink-2);
+  }
+
+  .stack-grid li b {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* ---------- formats ---------- */
+
+  .formats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 20px;
+  }
+
+  .format {
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--accent);
+    background: var(--surface);
+    padding: 22px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .format h3 {
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .format p {
+    margin: 0;
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--ink-2);
+  }
+
+  .format .meta {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--f-mono);
+    font-size: 12.5px;
+    color: var(--ink-3);
+  }
+
+  /* ---------- contact ---------- */
+
+  .contact {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    padding: clamp(26px, 4vw, 40px);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px 48px;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .contact h2 {
+    font-size: clamp(22px, 3vw, 30px);
+    font-weight: 600;
+    max-width: 18ch;
+  }
+
+  .contact p {
+    margin: 10px 0 0;
+    font-size: 15px;
+    color: var(--ink-2);
+    max-width: 46ch;
+  }
+
+  .contact-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-family: var(--f-mono);
+    font-size: 14px;
+  }
+
+  .contact-lines span.k {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-right: 10px;
+  }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    padding: 22px 0 36px;
+    font-family: var(--f-mono);
+    font-size: 11.5px;
+    color: var(--ink-3);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    justify-content: space-between;
+  }
+
+  .note {
+    margin: 26px 0 0;
+    padding: 14px 16px;
+    border-left: 2px solid var(--signal);
+    background: var(--signal-wash);
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: var(--measure);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="topbar">
+      <div class="eyebrow">Фронтенд&#8209;разработчик&nbsp;· финтех и крипта<br>Удалённо · часть занятости свободна
+      </div>
+      <button class="theme-toggle" id="themeToggle" type="button">Тема</button>
+    </div>
+
+    <h1>Кабинеты, в которых крутятся деньги</h1>
+
+    <p class="lede">
+      Делаю фронтенд торговых и банковских интерфейсов: биржевые кабинеты, арбитражные пулы,
+      партнёрские структуры и 2FA. <strong>Четыре с половиной года</strong> — в продуктах,
+      где на экране цифры, которые нельзя округлить, и состояние, которое меняется без перезагрузки.
+    </p>
+
+    <div class="identity">
+      <span class="name">Василий Чумаченко</span>
+      <span>Telegram <a href="https://t.me/kuzia84">@kuzia84</a></span>
+      <span>Почта <a href="mailto:kuzia84@gmail.com">kuzia84@gmail.com</a></span>
+    </div>
+
+    <div class="facts">
+      <div class="fact"><b>4&nbsp;475</b><span>коммитов под моим авторством</span></div>
+      <div class="fact"><b>53</b><span>репозитория с моим участием</span></div>
+      <div class="fact"><b>2022</b><span>первый коммит; работаю по сей день</span></div>
+      <div class="fact"><b>9</b><span>трейдинговых и банковских кабинетов</span></div>
+      <div class="fact"><b>7</b><span>продуктов с мультиязычностью</span></div>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <h2>Кейсы</h2>
+      <p>Названия скрыты по NDA; состав модулей и объём работы — фактические.</p>
+    </div>
+
+    <div class="ledger">
+
+      <article class="case">
+        <div class="case-year">2026<i>текущий</i></div>
+        <div>
+          <h3>Необанк и арбитражная биржа на TON — четыре фронтенда в монорепозитории</h3>
+          <p class="case-role">
+            Веду фронтовую часть платформы: банковский кабинет, биржа, интерфейс арбитражного ядра
+            и trade-in. Общий дизайн-слой и роутинг, разделяемая типизация с API, тесты на vitest.
+          </p>
+          <ul class="modules">
+            <li>портфель и история операций</li>
+            <li>договоры и подписание</li>
+            <li>статистика инвестора</li>
+            <li>матричная партнёрская структура</li>
+            <li>аттестация структуры</li>
+            <li>тикеты поддержки</li>
+            <li>анкета KYC</li>
+            <li>пулы и спред</li>
+            <li>статус маршрутов и серверов</li>
+            <li>broadcast txid</li>
+          </ul>
+          <p class="stack">React 19 · React Compiler · TanStack Router · TanStack Query · TypeScript · SCSS · i18next ·
+            vitest</p>
+        </div>
+        <div class="volume">
+          <div class="volume-num">855<small>коммитов</small></div>
+          <div class="bar"><i style="width:100%"></i></div>
+          <p class="volume-note">Из них 9&nbsp;597 правок файлов в банковском кабинете — основной объём.</p>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-year">2026<i>6 мес.</i></div>
+        <div>
+          <h3>Инвестиционная платформа с арбитражными пулами и партнёрской программой</h3>
+          <p class="case-role">
+            Кабинет инвестора целиком: от регистрации и восстановления доступа до расчёта доходности
+            по пулам. Роутинг на файловой структуре, около сорока маршрутов.
+          </p>
+          <ul class="modules">
+            <li>арбитраж и arbitrage&nbsp;pro</li>
+            <li>ликвидность</li>
+            <li>проценты по пулам</li>
+            <li>мои контракты</li>
+            <li>AML / KYC</li>
+            <li>партнёрская программа</li>
+            <li>boost и челленджи</li>
+            <li>маркетинговая статистика</li>
+            <li>события</li>
+            <li>план развития</li>
+          </ul>
+          <p class="stack">React · TanStack Router · TypeScript · SCSS · i18next</p>
+        </div>
+        <div class="volume">
+          <div class="volume-num">365<small>коммитов</small></div>
+          <div class="bar"><i style="width:43%"></i></div>
+          <p class="volume-note">Веб-кабинет и Telegram-приложение на одной кодовой базе.</p>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-year">2026<i>2 мес.</i></div>
+        <div>
+          <h3>Сервис видеовстреч на Next.js</h3>
+          <p class="case-role">
+            Фронтенд целиком: App Router, серверные компоненты, аутентификация,
+            создание и планирование встреч. Монорепозиторий на turbo с общим пакетом типов между
+            веб-приложением и API, сквозные сценарии на Playwright.
+          </p>
+          <ul class="modules">
+            <li>создание встречи и ссылки</li>
+            <li>список встреч с пагинацией</li>
+            <li>комната встречи</li>
+            <li>регистрация и вход</li>
+            <li>профиль и аватары</li>
+            <li>тёмная тема</li>
+            <li>пустые состояния</li>
+          </ul>
+          <p class="stack">Next.js (App Router) · React · TypeScript · HeroUI · Tailwind CSS · turbo · Playwright</p>
+        </div>
+        <div class="volume">
+          <div class="volume-num">171<small>коммит</small></div>
+          <div class="bar"><i style="width:20%"></i></div>
+          <p class="volume-note">Единственный проект, где я работал с SSR и серверными компонентами вплотную.</p>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-year">2025—26<i>8 мес.</i></div>
+        <div>
+          <h3>Криптоплатформа: веб-кабинет, Telegram Mini App и prestart-лендинги</h3>
+          <p class="case-role">
+            Два монорепозитория, общий ui-слой на несколько поверхностей: браузер, Telegram и
+            промо-страницы запуска. Подключение кошелька через TonConnect, двухфакторная
+            авторизация и её восстановление.
+          </p>
+          <ul class="modules">
+            <li>кошелёк</li>
+            <li>история транзакций</li>
+            <li>маркетинговая структура</li>
+            <li>hold и стейкинг</li>
+            <li>восстановление 2FA</li>
+            <li>интеграция партнёра</li>
+            <li>TonConnect</li>
+          </ul>
+          <p class="stack">React · TanStack Router/Query · TonConnect UI · zustand · TypeScript · Vite</p>
+        </div>
+        <div class="volume">
+          <div class="volume-num">478<small>коммитов</small></div>
+          <div class="bar"><i style="width:56%"></i></div>
+          <p class="volume-note">Суммарно по двум монорепозиториям платформы.</p>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-year">2024—25<i>3 мес.</i></div>
+        <div>
+          <h3>Один продукт, три бренда: параллельные фронтенды на общей кодовой базе</h3>
+          <p class="case-role">
+            Биржевой кабинет, который одновременно жил под тремя брендами с разными доменами,
+            темами и наборами фич. Развёл общее и брендозависимое так, чтобы правка в ядре
+            расходилась по всем трём без ручного переноса.
+          </p>
+          <ul class="modules">
+            <li>обмен и заявки</li>
+            <li>кабинет дилера</li>
+            <li>темизация под бренд</li>
+            <li>переключение сетей</li>
+            <li>реферальная программа</li>
+          </ul>
+          <p class="stack">React · TypeScript · TanStack Query · zustand · react-hook-form · Vite</p>
+        </div>
+        <div class="volume">
+          <div class="volume-num">703<small>коммита</small></div>
+          <div class="bar"><i style="width:82%"></i></div>
+          <p class="volume-note">Три ветки продукта плюс кабинет брокера, который вырос из той же базы.</p>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-year">2024<i>9 мес.</i></div>
+        <div>
+          <h3>P2P-обменник с бизнес-кабинетом и публичным API</h3>
+          <p class="case-role">
+            Кабинет обмена и витрина рынков: форма сделки с живым курсом, заявка и её статусы,
+            проверка адреса на AML с тарифами, раздел документации API с примерами кода.
+            Отдельный лендинг продукта на той же системе компонентов.
+          </p>
+          <ul class="modules">
+            <li>форма обмена</li>
+            <li>живой курс</li>
+            <li>статусы заявок</li>
+            <li>AML-проверка и тарифы</li>
+            <li>витрина рынков</li>
+            <li>документация API</li>
+            <li>бизнес-кабинет</li>
+            <li>мобильное меню</li>
+          </ul>
+          <p class="stack">React · Redux Toolkit · TanStack Query · socket.io · react-pdf · Vite</p>
+        </div>
+        <div class="volume">
+          <div class="volume-num">260<small>коммитов</small></div>
+          <div class="bar"><i style="width:30%"></i></div>
+          <p class="volume-note">Кабинет и лендинг; сокеты для курсов в реальном времени.</p>
+        </div>
+      </article>
+
+      <article class="case">
+        <div class="case-year">2024<i>7 мес.</i></div>
+        <div>
+          <h3>Подписочный сервис торгового бота</h3>
+          <p class="case-role">
+            Весь жизненный цикл подписки в интерфейсе: покупка, продление, восстановление,
+            бесплатный тариф, история обменов. Плюс безопасность аккаунта и реферальная часть.
+          </p>
+          <ul class="modules">
+            <li>покупка и продление</li>
+            <li>история обменов</li>
+            <li>смена и восстановление пароля</li>
+            <li>reCAPTCHA</li>
+            <li>переключение сетей</li>
+            <li>партнёрские ссылки</li>
+            <li>модалки обновлений</li>
+          </ul>
+          <p class="stack">React · TanStack Query · TypeScript · i18next · Vite</p>
+        </div>
+        <div class="volume">
+          <div class="volume-num">207<small>коммитов</small></div>
+          <div class="bar"><i style="width:24%"></i></div>
+          <p class="volume-note">Админка сервиса — отдельным приложением.</p>
+        </div>
+      </article>
+
+    </div>
+
+    <p class="note">
+      Полосы справа — реальное число моих коммитов в репозитории, а не оценка «на глаз».
+      Шкала общая для всех строк, поэтому кейсы сравнимы между собой.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Раньше</h2>
+      <p>Проекты, которые уже закрыты, но объясняют, откуда взялся опыт.</p>
+    </div>
+
+    <div class="earlier">
+      <div>
+        <span class="n">2024 · 112 коммитов</span>
+        <h4>Кредитно-трейдинговый кабинет</h4>
+        <p>Быстрые обмены, балансы по валютам, переводы между счетами, партнёрский раздел. Лендинг продукта — отдельно.
+        </p>
+      </div>
+      <div>
+        <span class="n">2024 · 139 коммитов</span>
+        <h4>Бэкофис на четыре роли</h4>
+        <p>Монорепозиторий на lerna: бэкофис, клиент, менеджер закупок, менеджер продаж — четыре приложения с общим
+          ядром.</p>
+      </div>
+      <div>
+        <span class="n">2023 · 55 коммитов</span>
+        <h4>Библиотека UI-компонентов</h4>
+        <p>Своя сборка на webpack, публикация пакетом, переиспользование между продуктами компании.</p>
+      </div>
+      <div>
+        <span class="n">2022—23 · 590 коммитов</span>
+        <h4>Экосистема на Vue&nbsp;2</h4>
+        <p>Девять приложений: кабинеты, дашборд, партнёрский раздел, маркетинг, лендинги. Vuex, мультиязычность,
+          QR-платежи.</p>
+      </div>
+      <div>
+        <span class="n">2025 · 50 коммитов</span>
+        <h4>Маркетплейс автомобилей</h4>
+        <p>Поиск с фильтрами и пагинацией, подача объявления, профиль пользователя. TanStack Router с типизированными
+          параметрами.</p>
+      </div>
+      <div>
+        <span class="n">2026 · 37 коммитов</span>
+        <h4>Сервис такси</h4>
+        <p>Четыре роли в одном приложении: клиент, водитель, гараж, аренда. Заказы, партнёрка, встроенный кошелёк.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Стек</h2>
+      <p>Жирным — то, что использую в продакшене каждую неделю.</p>
+    </div>
+
+    <div class="stack-grid">
+      <div>
+        <h4>Ядро</h4>
+        <ul>
+          <li><b>React 18/19</b>, React Compiler</li>
+          <li><b>TypeScript</b> — строгий режим</li>
+          <li><b>Vite</b>, монорепозитории на turbo и lerna</li>
+          <li><b>Next.js</b> — App Router, серверные компоненты</li>
+          <li>Vue 2 / Vue 3, Nuxt — легаси-проекты</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Данные и состояние</h4>
+        <ul>
+          <li><b>TanStack Query</b> — кэш, инвалидация, оптимистичные обновления</li>
+          <li><b>TanStack Router</b> — типизированные маршруты, zod-адаптер</li>
+          <li><b>zustand</b>, Redux Toolkit, effector, MobX</li>
+          <li><b>socket.io</b> — котировки и статусы в реальном времени</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Интерфейс</h4>
+        <ul>
+          <li><b>SCSS</b> и CSS-модули, Tailwind</li>
+          <li><b>react-hook-form</b> — сложные формы и валидация</li>
+          <li><b>i18next</b> — мультиязычность в семи продуктах</li>
+          <li>Адаптив от 320&nbsp;px, тёмная тема, three.js</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Крипта и Telegram</h4>
+        <ul>
+          <li><b>TonConnect</b> — подключение кошелька, адрес, отправка транзакции на подпись</li>
+          <li><b>Telegram Mini Apps</b> — фронтенд и интеграция с ботом</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Качество</h4>
+        <ul>
+          <li><b>vitest</b> и Testing Library</li>
+          <li>ESLint, typescript-eslint, строгие правила hooks</li>
+          <li>Cypress, Playwright</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Чего не беру</h4>
+        <ul>
+          <li>Бэкенд «под ключ» — я фронтендер, а не fullstack</li>
+          <li>Мобильные приложения — React Native и нативная разработка не мои</li>
+          <li>Смарт-контракты и блокчейн-логика — делаю фронт поверх, контракты пишет бэкенд</li>
+          <li>Дизайн с нуля — работаю по макету</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Форматы</h2>
+      <p>Основная занятость есть, поэтому беру ограниченный объём и говорю об этом сразу.</p>
+    </div>
+
+    <div class="formats">
+      <div class="format">
+        <h3>Часть занятости</h3>
+        <p>
+          10—20 часов в неделю на долгом проекте. Подключаюсь к команде, работаю по спринтам,
+          беру на себя фронтовое направление целиком — от макета до релиза.
+        </p>
+        <div class="meta">Ставка 2 000—2 500 ₽/час · оплата по факту часов</div>
+      </div>
+      <div class="format">
+        <h3>Разовая задача</h3>
+        <p>
+          Доработка существующего кабинета, сложная форма, миграция роутинга,
+          интеграция кошелька, починка того, что собрали наспех. Оценка по объёму, срок — от трёх дней.
+        </p>
+        <div class="meta">От 40 000 ₽ за задачу · фикс по оценке</div>
+      </div>
+      <div class="format">
+        <h3>Аудит фронтенда</h3>
+        <p>
+          Разбираю чужой проект и отдаю документ: что тормозит, что сломается при росте,
+          что переписать в первую очередь и во сколько это обойдётся. Без обязательства делать самому.
+        </p>
+        <div class="meta">2—3 дня · фиксированная стоимость</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="contact">
+      <div>
+        <h2>Напишите с описанием задачи</h2>
+        <p>
+          Отвечаю в течение дня. Если задача не моя — скажу сразу, а не после недели переписки.
+          По NDA-проектам могу показать экраны на созвоне.
+        </p>
+      </div>
+      <div class="contact-lines">
+        <div><span class="k">Telegram</span><a href="https://t.me/kuzia84">@kuzia84</a></div>
+        <div><span class="k">Почта</span><a href="mailto:kuzia84@gmail.com">kuzia84@gmail.com</a></div>
+        <div><span class="k">Часовой пояс</span>UTC+3</div>
+      </div>
+    </div>
+
+  </section>
+
+  <footer>
+    <span>Портфолио фронтенд-разработчика · финтех, крипта, трейдинг</span>
+    <span>Цифры — по истории коммитов, сентябрь 2026</span>
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var btn = document.getElementById("themeToggle")
+    var root = document.documentElement
+    btn.addEventListener("click", function () {
+      var dark = root.getAttribute("data-theme") === "dark"
+        || (!root.getAttribute("data-theme")
+          && window.matchMedia("(prefers-color-scheme: dark)").matches)
+      root.setAttribute("data-theme", dark ? "light" : "dark")
+      try { localStorage.setItem("pf-theme", dark ? "light" : "dark") } catch (e) { }
+    })
+    try {
+      var saved = localStorage.getItem("pf-theme")
+      if (saved === "light" || saved === "dark") root.setAttribute("data-theme", saved)
+    } catch (e) { }
+  })();
+</script>
