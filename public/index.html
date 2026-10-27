@@ -14,12 +14,17 @@
     <section>
       <h2>Сотрудники</h2>
       <form id="employee-form" class="row">
-        <input id="employee-name" name="name" placeholder="Имя сотрудника" maxlength="100" required>
+        <label class="grow">Имя сотрудника
+          <input id="employee-name" name="name" placeholder="Например, Анна Тестова" maxlength="100"
+                 autocomplete="off" required aria-describedby="employee-error">
+        </label>
         <button type="submit">Добавить</button>
       </form>
       <p id="employee-error" class="error" role="alert"></p>
       <ul id="employees" class="employees"></ul>
-      <p id="employees-empty" class="muted" hidden>Сотрудников пока нет.</p>
+      <p id="employees-empty" class="muted" hidden>Сотрудников пока нет. Добавьте первого в форме выше.</p>
+      <!-- Start and stop of a timer, for screen readers. The per-second counters are not live regions. -->
+      <p id="timer-status" class="visually-hidden" role="status" aria-atomic="true"></p>
     </section>
 
     <section>
@@ -41,13 +46,18 @@
       </table>
 
       <h3>Записи</h3>
-      <p id="entries-empty" class="muted" hidden>Нет записей за период.</p>
-      <table id="entries-table">
-        <thead>
-          <tr><th>Сотрудник</th><th>Задача</th><th>Начало</th><th>Конец</th><th class="num">Длительность</th></tr>
-        </thead>
-        <tbody id="entries"></tbody>
-      </table>
+      <p id="entries-empty" class="muted" hidden>
+        Нет записей за период. Выберите другие даты или запустите таймер у сотрудника.
+      </p>
+      <!-- On a narrow screen the table scrolls inside this block, not the whole page. -->
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Записи за период">
+        <table id="entries-table">
+          <thead>
+            <tr><th>Сотрудник</th><th>Задача</th><th>Начало</th><th>Конец</th><th class="num">Длительность</th></tr>
+          </thead>
+          <tbody id="entries"></tbody>
+        </table>
+      </div>
     </section>
   </main>
   <script type="module" src="app.js"></script>

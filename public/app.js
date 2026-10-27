@@ -79,7 +79,8 @@ function renderEmployees() {
 }
 
 function renderEmployee(emp) {
-  const error = el('p', { className: 'error', role: 'alert' });
+  const errorId = `timer-error-${emp.id}`;
+  const error = el('p', { className: 'error', role: 'alert', id: errorId });
   const message = timerErrors.get(emp.id);
   if (message) {
     timerErrors.delete(emp.id);
@@ -90,7 +91,8 @@ function renderEmployee(emp) {
 
   if (emp.activeEntry) {
     const stop = el('button', { type: 'button', className: 'stop', textContent: 'Стоп' });
-    stop.addEventListener('click', () => timerAction(stop, emp.id, 'stop'));
+    stop.setAttribute('aria-describedby', errorId);
+    stop.addEventListener('click', () => timerAction(stop, emp, 'stop'));
     item.append(
       el('div', { className: 'running' },
         el('span', { textContent: emp.activeEntry.description }),
@@ -105,23 +107,31 @@ function renderEmployee(emp) {
       required: true,
       value: drafts.get(emp.id) ?? '',
     });
+    input.setAttribute('aria-describedby', errorId);
     input.addEventListener('input', () => drafts.set(emp.id, input.value));
     const start = el('button', { type: 'submit', textContent: 'Старт' });
-    const form = el('form', { className: 'row' }, input, start);
+    const form = el('form', { className: 'row' },
+      el('label', { className: 'grow' }, 'Задача', input),
+      start);
     form.addEventListener('submit', (event) => {
       event.preventDefault();
-      timerAction(start, emp.id, 'start', { description: input.value });
+      timerAction(start, emp, 'start', { description: input.value });
     });
     item.append(form, error);
   }
   return item;
 }
 
-async function timerAction(button, employeeId, action, body) {
+async function timerAction(button, employee, action, body) {
+  const employeeId = employee.id;
   button.disabled = true;
   try {
-    await api('POST', `/api/employees/${employeeId}/timer/${action}`, body);
+    const entry = await api('POST', `/api/employees/${employeeId}/timer/${action}`, body);
     if (action === 'start') drafts.delete(employeeId);
+    // One complete phrase for screen readers, without moving focus.
+    $('timer-status').textContent = action === 'start'
+      ? `Таймер запущен: ${employee.name}, ${entry.description}`
+      : `Таймер остановлен: ${employee.name}, ${formatDuration(entry.endedAt - entry.startedAt)}`;
   } catch (err) {
     // The page may be out of date, for example after a start in another tab.
     // Keep the message and reload the real state below.
@@ -238,8 +248,8 @@ function renderReport({ entries, totals }, periodEnd) {
     el('tr', {},
       el('td', { textContent: e.employeeName }),
       el('td', { textContent: e.description }),
-      el('td', { textContent: dateTime.format(e.startedAt) }),
-      el('td', { textContent: e.endedAt ? dateTime.format(e.endedAt) : 'идёт' }),
+      el('td', { className: 'date', textContent: dateTime.format(e.startedAt) }),
+      el('td', { className: 'date', textContent: e.endedAt ? dateTime.format(e.endedAt) : 'идёт' }),
       el('td', {
         className: 'num',
         textContent: formatDuration((e.endedAt ?? now) - e.startedAt),
