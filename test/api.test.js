@@ -71,6 +71,14 @@ describe('API', () => {
       assert.ok(res.data.error);
     });
 
+    test('лишние пробелы в имени убираются, список отсортирован по алфавиту', async () => {
+      await addEmployee('Вера   Образцова');
+      await addEmployee('анна тестова');
+      await addEmployee('Борис Пример');
+      const list = await ctx.call('GET', '/api/employees');
+      assert.deepEqual(list.data.map((e) => e.name), ['анна тестова', 'Борис Пример', 'Вера Образцова']);
+    });
+
     test('дубль имени без учёта регистра -> 409', async () => {
       await addEmployee('Борис Пример');
       const res = await ctx.call('POST', '/api/employees', { name: 'борис пример' });
@@ -245,6 +253,47 @@ describe('API', () => {
       assert.equal(res.data.totals[0].totalMs, 24 * HOUR);
     });
 
+    test('границы периода: начало входит, конец не входит', async () => {
+      const emp = await addEmployee('Анна Тестова');
+      const base = `/api/employees/${emp.id}/timer`;
+      // Ends exactly at the period start: outside.
+      ctx.clock.now = Date.parse(FROM) - HOUR;
+      await ctx.call('POST', `${base}/start`, { description: 'До периода' });
+      ctx.clock.now = Date.parse(FROM);
+      await ctx.call('POST', `${base}/stop`);
+      // Starts exactly at the period start: inside.
+      await ctx.call('POST', `${base}/start`, { description: 'С начала периода' });
+      ctx.clock.now += HOUR;
+      await ctx.call('POST', `${base}/stop`);
+      // Starts exactly at the period end: outside.
+      ctx.clock.now = Date.parse(TO);
+      await ctx.call('POST', `${base}/start`, { description: 'После периода' });
+      ctx.clock.now += HOUR;
+      await ctx.call('POST', `${base}/stop`);
+
+      const res = await ctx.call('GET', reportPath(FROM, TO));
+      assert.deepEqual(res.data.entries.map((e) => e.description), ['С начала периода']);
+      assert.equal(res.data.totals[0].totalMs, HOUR);
+    });
+
+    test('записи отчёта идут по времени начала', async () => {
+      const a = await addEmployee('Анна Тестова');
+      const b = await addEmployee('Борис Пример');
+      ctx.clock.now = T0 + 2 * HOUR;
+      await ctx.call('POST', `/api/employees/${a.id}/timer/start`, { description: 'Позже' });
+      ctx.clock.now = T0 + 3 * HOUR;
+      await ctx.call('POST', `/api/employees/${a.id}/timer/stop`);
+      ctx.clock.now = T0;
+      await ctx.call('POST', `/api/employees/${b.id}/timer/start`, { description: 'Раньше' });
+      ctx.clock.now = T0 + HOUR;
+      await ctx.call('POST', `/api/employees/${b.id}/timer/stop`);
+
+      ctx.clock.now = T0 + 4 * HOUR;
+      const res = await ctx.call('GET', reportPath(FROM, TO));
+      assert.deepEqual(res.data.entries.map((e) => e.description), ['Раньше', 'Позже']);
+      assert.equal(res.data.entries[0].employeeName, 'Борис Пример');
+    });
+
     test('будущий период не включает идущий таймер', async () => {
       const emp = await addEmployee('Анна Тестова');
       await ctx.call('POST', `/api/employees/${emp.id}/timer/start`, { description: 'Идёт' });
@@ -287,6 +336,18 @@ describe('API', () => {
       const res = await ctx.call('GET', reportPath(FROM, TO));
       assert.equal(res.data.totals[0].totalMs, HOUR);
     });
+  });
+
+  test('неизвестный маршрут API -> 404 в JSON', async () => {
+    const res = await ctx.call('GET', '/api/nothing');
+    assert.equal(res.status, 404);
+    assert.ok(res.data.error);
+  });
+
+  test('сервер отдаёт страницу приложения', async () => {
+    const res = await fetch(`http://127.0.0.1:${ctx.server.address().port}/`);
+    assert.equal(res.status, 200);
+    assert.match(await res.text(), /<title>Учёт рабочего времени<\/title>/);
   });
 
   test('ответ API содержит время сервера', async () => {

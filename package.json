@@ -10,9 +10,13 @@
   "scripts": {
     "start": "node src/server.js",
     "test": "node --test --test-concurrency=8 \"test/**/*.test.js\"",
+    "test:ui": "playwright test --workers=1",
     "seed": "node scripts/seed.js"
   },
   "dependencies": {
     "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1"
   }
 }
